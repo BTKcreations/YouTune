@@ -21,13 +21,23 @@ export class EqualizerAudioNode {
   private source: MediaElementAudioSourceNode | null = null;
   private gainNode: GainNode | null = null;
   private isConnected: boolean = false;
+  private currentElement: HTMLAudioElement | null = null;
 
   init(audioElement: HTMLAudioElement) {
-    if (this.isConnected) return;
+    this.currentElement = audioElement;
+    // Don't auto-connect MediaElementSource until user explicitly enables equalizer,
+    // because cross-origin audio elements without CORS headers will output silence
+    // when piped through Web Audio API's createMediaElementSource!
+  }
+
+  enable() {
+    if (this.isConnected || !this.currentElement) return;
     try {
+      // Set crossOrigin if allowed by server
+      this.currentElement.crossOrigin = 'anonymous';
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       this.ctx = new AudioCtx();
-      this.source = this.ctx.createMediaElementSource(audioElement);
+      this.source = this.ctx.createMediaElementSource(this.currentElement);
       this.gainNode = this.ctx.createGain();
 
       // Create 10 band filters
@@ -51,7 +61,7 @@ export class EqualizerAudioNode {
 
       this.isConnected = true;
     } catch (e) {
-      console.warn('Web Audio API equalizer init failed (browser restrictions)', e);
+      console.warn('Web Audio API equalizer init failed', e);
     }
   }
 

@@ -14,12 +14,14 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   const handlePresetSelect = (preset: EqualizerPreset) => {
+    equalizerManager.enable();
     setSelectedPreset(preset.id);
     setGains([...preset.gains]);
     equalizerManager.applyPreset(preset);
   };
 
   const handleSliderChange = (idx: number, val: number) => {
+    equalizerManager.enable();
     setSelectedPreset('custom');
     const updated = [...gains];
     updated[idx] = val;

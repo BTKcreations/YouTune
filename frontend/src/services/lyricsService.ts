@@ -35,12 +35,18 @@ export class LyricsService {
    * Fetch synced lyrics from LRCLIB free API
    */
   static async getLyrics(title: string, artist: string, durationSec?: number): Promise<LyricLine[]> {
-    const cleanTitle = title
+    // Remove YouTube specific titles like "Song | Movie | Singers | Official Video"
+    let cleanTitle = title
+      .split('|')[0]
+      .split('-')[0]
       .replace(/[\(\[\{].*?[\)\]\}]/g, '')
+      .replace(/official.*|video.*|lyric.*|audio.*|song.*/gi, '')
       .replace(/feat\..*|ft\..*/i, '')
       .trim();
 
-    const cleanArtist = artist.replace(/VEVO|- Topic/i, '').trim();
+    let cleanArtist = artist
+      .replace(/VEVO|- Topic|Music|Records|Entertainment/gi, '')
+      .trim();
     const cacheKey = `${cleanTitle.toLowerCase()}::${cleanArtist.toLowerCase()}`;
 
     if (this.cache.has(cacheKey)) {
