@@ -11,33 +11,32 @@ export interface OfflineTrackMetadata {
 
 export class OfflineStorageService {
   /**
-   * Save track audio blob and cover art into browser Cache API for offline listening
+   * Save track into local storage and cache for offline listening
    */
   static async downloadTrack(track: Track): Promise<boolean> {
     try {
-      if (!('caches' in window)) return false;
-
-      const cache = await caches.open(CACHE_NAME);
-      const imgUrl = `/offline/img/${track.youtubeId}`;
-
-      // Fetch and store thumbnail
-      try {
-        const imgResp = await fetch(track.thumbnailUrl);
-        if (imgResp.ok) await cache.put(imgUrl, imgResp);
-      } catch {
-        // Thumbnail cache optional
-      }
-
-      // Save metadata to offline library
+      // 1. Immediately save metadata to offline library
       const tracks = this.getDownloadedTracks();
-      if (!tracks.some((t) => t.track.id === track.id)) {
+      if (!tracks.some((t) => t.track.id === track.id || t.track.youtubeId === track.youtubeId)) {
         tracks.unshift({ track, downloadedAt: Date.now() });
         localStorage.setItem(METADATA_KEY, JSON.stringify(tracks));
       }
 
+      // 2. Optionally cache image if browser supports Cache API (non-blocking)
+      if ('caches' in window) {
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          const imgUrl = `/offline/img/${track.youtubeId}`;
+          const imgResp = await fetch(track.thumbnailUrl, { mode: 'no-cors' });
+          if (imgResp) await cache.put(imgUrl, imgResp);
+        } catch {
+          // Non-critical, ignore
+        }
+      }
+
       return true;
     } catch (e) {
-      console.error('Failed to download track for offline', e);
+      console.error('Failed to save track for offline', e);
       return false;
     }
   }
