@@ -1,66 +1,68 @@
 import React from 'react';
-import { X, ExternalLink, Maximize2 } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import { usePlayerStore } from '../../stores/usePlayerStore';
-import { UniversalAudioBridge } from './UniversalAudioBridge';
+import { HTML5AudioBridge } from './HTML5AudioBridge';
 import { cn } from '../../utils/formatters';
 
 export const MiniPlayer: React.FC = () => {
   const { isMiniPlayerOpen, toggleMiniPlayer, currentTrack } = usePlayerStore();
 
   return (
-    <div
-      className={cn(
-        "fixed bottom-24 right-4 z-40 rounded-xl bg-spotify-card border border-spotify-border shadow-2xl overflow-hidden transition-all duration-300",
-        isMiniPlayerOpen
-          ? "w-80 md:w-96 opacity-100 scale-100 pointer-events-auto"
-          : "w-48 h-28 opacity-95 scale-90 pointer-events-auto md:w-56 md:h-32"
-      )}
-      style={{
-        // Maintain minimum physical layout so mobile/desktop engines treat video as visible and active
-        minWidth: isMiniPlayerOpen ? '320px' : '192px',
-        minHeight: isMiniPlayerOpen ? '220px' : '112px',
-      }}
-    >
-      <div className="flex items-center justify-between px-3 py-1.5 bg-spotify-elevated border-b border-spotify-border">
-        <div className="flex items-center gap-2 truncate">
-          <span className="w-2 h-2 rounded-full bg-spotify-green animate-pulse" />
-          <span className="text-[11px] font-semibold text-white truncate max-w-[140px]">
-            {currentTrack?.title || 'YouTube Player'}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {currentTrack && (
-            <a
-              href={`https://www.youtube.com/watch?v=${currentTrack.youtubeId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Open on official YouTube"
-              className="text-spotify-subtext hover:text-white p-1"
+    <>
+      {/* Background HTML5 Audio Engine & Media Session Provider */}
+      <HTML5AudioBridge />
+
+      <div
+        className={cn(
+          "fixed bottom-24 right-4 z-50 w-80 md:w-96 rounded-xl bg-spotify-card border border-spotify-border shadow-2xl overflow-hidden transition-all duration-300",
+          !isMiniPlayerOpen && "opacity-0 pointer-events-none scale-0 h-0 w-0 !overflow-hidden fixed -bottom-96 -right-96"
+        )}
+      >
+        <div className="flex items-center justify-between px-3 py-2 bg-spotify-elevated border-b border-spotify-border">
+          <div className="flex items-center gap-2 truncate">
+            <span className="w-2 h-2 rounded-full bg-spotify-green animate-pulse" />
+            <span className="text-xs font-semibold text-white truncate">
+              {currentTrack?.title || 'No Track'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {currentTrack && (
+              <a
+                href={`https://www.youtube.com/watch?v=${currentTrack.youtubeId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open in YouTube"
+                className="text-spotify-subtext hover:text-white"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
+            <button
+              onClick={toggleMiniPlayer}
+              className="text-spotify-subtext hover:text-white"
             >
-              <ExternalLink className="w-3 h-3" />
-            </a>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="w-full aspect-video bg-black relative flex items-center justify-center">
+          {currentTrack ? (
+            <img
+              src={currentTrack.thumbnailUrl}
+              alt={currentTrack.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="text-xs text-gray-500">YouTune Music</div>
           )}
-          <button
-            onClick={toggleMiniPlayer}
-            className="text-spotify-subtext hover:text-white p-1"
-            title={isMiniPlayerOpen ? "Collapse Dock" : "Expand Video"}
-          >
-            {isMiniPlayerOpen ? <X className="w-3.5 h-3.5" /> : <Maximize2 className="w-3 h-3" />}
-          </button>
+        </div>
+
+        <div className="p-2.5 bg-[#121212] flex items-center justify-between text-xs text-spotify-subtext">
+          <span className="truncate">{currentTrack?.artist || 'YouTune'}</span>
+          <span className="text-[10px] text-spotify-green font-mono">Background Audio Active</span>
         </div>
       </div>
-
-      {/* Official YouTube IFrame Anchor with persistent visible dimensions */}
-      <div className="w-full aspect-video bg-black relative flex items-center justify-center overflow-hidden">
-        <UniversalAudioBridge />
-      </div>
-
-      {isMiniPlayerOpen && (
-        <div className="p-2 bg-[#121212] flex items-center justify-between text-[11px] text-spotify-subtext border-t border-spotify-border">
-          <span className="truncate max-w-[180px]">{currentTrack?.artist || 'YouTune Music'}</span>
-          <span className="text-[9px] text-spotify-green font-mono">Official Player Active</span>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
