@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: youtune-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-youtune}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-youtune_password}
+      POSTGRES_DB: ${POSTGRES_DB:-youtune_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-youtune} -d ${POSTGRES_DB:-youtune_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - youtune-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: youtune-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-youtune}:${POSTGRES_PASSWORD:-youtune_password}@postgres:5432/${POSTGRES_DB:-youtune_db}
+      - JWT_SECRET=${JWT_SECRET:-youtune_super_secret_jwt_key_change_in_production_32chars!}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
+      - YOUTUBE_CACHE_TTL_SECONDS=${YOUTUBE_CACHE_TTL_SECONDS:-3600}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - ENVIRONMENT=production
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    networks:
+      - youtune-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:8000/api/v1
+    container_name: youtune-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - youtune-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  youtune-network:
+    driver: bridge
