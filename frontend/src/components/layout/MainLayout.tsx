@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { TopNavbar } from './TopNavbar';
 import { BottomPlayer } from '../player/BottomPlayer';
 import { MiniPlayer } from '../player/MiniPlayer';
+import { MobileNav } from './MobileNav';
 import { useLibraryStore } from '../../stores/useLibraryStore';
 
 export const MainLayout: React.FC = () => {
@@ -22,25 +23,28 @@ export const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-black text-white font-sans overflow-hidden select-none">
+    <div className="flex flex-col h-[100dvh] w-screen bg-black text-white font-sans overflow-hidden select-none">
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
+        {/* Left Sidebar (Desktop Only) */}
         <Sidebar onNewPlaylistClick={() => setIsModalOpen(true)} />
 
         {/* Central View Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#121212] overflow-hidden">
           <TopNavbar />
-          <main className="flex-1 overflow-y-auto px-6 py-6 pb-28">
+          <main className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6 pb-36 md:pb-28">
             <Outlet />
           </main>
         </div>
       </div>
 
-      {/* Floating Mini Player (YouTube Official Video preview) */}
+      {/* Floating Mini Player (YouTube Video preview) */}
       <MiniPlayer />
 
-      {/* Persistent Bottom Bar */}
+      {/* Persistent Bottom Audio Player */}
       <BottomPlayer />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileNav />
 
       {/* Create Playlist Modal */}
       {isModalOpen && (

@@ -47,8 +47,8 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
 
   if (!currentTrack) {
     return (
-      <footer className="h-20 bg-spotify-black border-t border-spotify-border px-4 flex items-center justify-between select-none">
-        <div className="text-sm text-spotify-subtext">No track selected. Pick a song to start listening!</div>
+      <footer className="h-16 md:h-20 bg-spotify-black border-t border-spotify-border px-4 flex items-center justify-between select-none pb-14 md:pb-0">
+        <div className="text-xs md:text-sm text-spotify-subtext truncate">No track selected. Pick a song to start listening!</div>
       </footer>
     );
   }
@@ -67,59 +67,48 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
   };
 
   return (
-    <footer className="h-24 md:h-20 bg-[#181818] border-t border-[#282828] px-4 flex flex-col md:flex-row items-center justify-between select-none z-40 relative">
+    <footer className="fixed md:relative bottom-14 md:bottom-0 left-0 right-0 h-16 md:h-20 bg-[#181818] border-t border-[#282828] px-3 md:px-4 flex items-center justify-between select-none z-50 shadow-2xl">
       {/* Left: Track Information */}
-      <div className="flex items-center gap-3 w-full md:w-1/4 justify-between md:justify-start py-1 md:py-0">
-        <div className="relative group cursor-pointer" onClick={toggleMiniPlayer}>
+      <div className="flex items-center gap-2.5 md:gap-3 flex-1 md:w-1/4 min-w-0 pr-2">
+        <div className="relative group cursor-pointer flex-shrink-0" onClick={toggleMiniPlayer}>
           <img
             src={currentTrack.thumbnailUrl}
             alt={currentTrack.title}
-            className="w-14 h-14 rounded object-cover shadow"
+            className="w-10 h-10 md:w-14 md:h-14 rounded object-cover shadow"
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded">
-            <Maximize2 className="w-4 h-4 text-white" />
+            <Maximize2 className="w-3.5 h-3.5 text-white" />
           </div>
         </div>
 
-        <div className="flex flex-col min-w-0 pr-2">
-          <span className="text-white text-sm font-medium hover:underline cursor-pointer truncate">
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="text-white text-xs md:text-sm font-medium hover:underline cursor-pointer truncate">
             {currentTrack.title}
           </span>
-          <span className="text-spotify-subtext text-xs hover:underline cursor-pointer truncate">
+          <span className="text-spotify-subtext text-[10px] md:text-xs hover:underline cursor-pointer truncate">
             {currentTrack.artist}
           </span>
         </div>
 
         <button
-          onClick={() => toggleLikeTrack(currentTrack)}
-          className="text-spotify-subtext hover:text-white transition-colors p-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleLikeTrack(currentTrack);
+          }}
+          className="text-spotify-subtext hover:text-white transition-colors p-1 flex-shrink-0"
           title={isLiked ? 'Remove from Your Library' : 'Save to Your Library'}
         >
-          <Heart className={cn('w-5 h-5', isLiked && 'fill-spotify-green text-spotify-green')} />
+          <Heart className={cn('w-4 h-4 md:w-5 md:h-5', isLiked && 'fill-spotify-green text-spotify-green')} />
         </button>
-
-        {/* YouTube Attribution badge */}
-        <a
-          href={`https://www.youtube.com/watch?v=${currentTrack.youtubeId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Watch on official YouTube"
-          className="text-xs text-red-500 hover:text-red-400 flex items-center gap-1 pl-1"
-        >
-          <span className="hidden lg:inline bg-red-600/20 text-red-400 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-red-500/30">
-            YouTube
-          </span>
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
       </div>
 
-      {/* Center: Playback Controls & Progress Bar */}
-      <div className="flex flex-col items-center w-full md:w-2/4 max-w-xl">
-        <div className="flex items-center gap-4">
+      {/* Center: Playback Controls (Compact on Mobile, Full on Desktop) */}
+      <div className="flex items-center md:flex-col justify-end md:justify-center md:w-2/4 md:max-w-xl gap-2 md:gap-0">
+        <div className="flex items-center gap-2 md:gap-4">
           <button
             onClick={toggleShuffle}
             className={cn(
-              'transition-colors',
+              'hidden md:inline transition-colors',
               shuffle ? 'text-spotify-green' : 'text-spotify-subtext hover:text-white'
             )}
             title="Enable shuffle"
@@ -129,36 +118,36 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
 
           <button
             onClick={prevTrack}
-            className="text-spotify-subtext hover:text-white transition-colors"
+            className="text-spotify-subtext hover:text-white transition-colors p-1"
             title="Previous"
           >
-            <SkipBack className="w-5 h-5 fill-current" />
+            <SkipBack className="w-4 h-4 md:w-5 md:h-5 fill-current" />
           </button>
 
           <button
             onClick={togglePlay}
-            className="w-9 h-9 rounded-full bg-white hover:scale-105 transition-transform flex items-center justify-center text-black shadow"
+            className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white hover:scale-105 transition-transform flex items-center justify-center text-black shadow"
             title={playbackState === 'playing' ? 'Pause' : 'Play'}
           >
             {playbackState === 'playing' ? (
-              <Pause className="w-5 h-5 fill-black" />
+              <Pause className="w-4 h-4 md:w-5 md:h-5 fill-black" />
             ) : (
-              <Play className="w-5 h-5 fill-black translate-x-0.5" />
+              <Play className="w-4 h-4 md:w-5 md:h-5 fill-black translate-x-0.5" />
             )}
           </button>
 
           <button
             onClick={nextTrack}
-            className="text-spotify-subtext hover:text-white transition-colors"
+            className="text-spotify-subtext hover:text-white transition-colors p-1"
             title="Next"
           >
-            <SkipForward className="w-5 h-5 fill-current" />
+            <SkipForward className="w-4 h-4 md:w-5 md:h-5 fill-current" />
           </button>
 
           <button
             onClick={cycleRepeat}
             className={cn(
-              'transition-colors relative',
+              'hidden md:inline transition-colors relative',
               repeat !== 'off' ? 'text-spotify-green' : 'text-spotify-subtext hover:text-white'
             )}
             title={`Repeat mode: ${repeat}`}
@@ -170,8 +159,8 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
           </button>
         </div>
 
-        {/* Timeline Slider */}
-        <div className="w-full flex items-center gap-2 mt-1">
+        {/* Timeline Slider (Desktop full, Mobile absolute bottom line) */}
+        <div className="hidden md:flex w-full items-center gap-2 mt-1">
           <span className="text-[11px] text-spotify-subtext w-8 text-right">
             {formatTime(currentTime)}
           </span>
@@ -193,6 +182,12 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
           </span>
         </div>
       </div>
+
+      {/* Mobile Thin Top Progress Bar */}
+      <div
+        className="md:hidden absolute top-0 left-0 h-0.5 bg-spotify-green transition-all"
+        style={{ width: `${progressPercent}%` }}
+      />
 
       {/* Right: Volume & Extra Utilities */}
       <div className="hidden md:flex items-center justify-end w-1/4 gap-3">

@@ -31,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewPlaylistClick }) => {
   ];
 
   return (
-    <aside className="w-64 bg-black flex-shrink-0 flex flex-col h-full border-r border-[#202020] select-none">
+    <aside className="hidden md:flex w-64 bg-black flex-shrink-0 flex-col h-full border-r border-[#202020] select-none">
       {/* Brand Logo */}
       <div className="p-6 flex items-center gap-2">
         <div className="w-9 h-9 rounded-full bg-spotify-green flex items-center justify-center text-black shadow-lg">
