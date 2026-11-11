@@ -19,9 +19,10 @@ import { formatTime, cn } from '../../utils/formatters';
 
 interface BottomPlayerProps {
   onOpenQueue?: () => void;
+  onOpenNowPlaying?: () => void;
 }
 
-export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
+export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenNowPlaying }) => {
   const {
     currentTrack,
     playbackState,
@@ -69,8 +70,11 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
   return (
     <footer className="fixed md:relative bottom-14 md:bottom-0 left-0 right-0 h-16 md:h-20 bg-[#181818] border-t border-[#282828] px-3 md:px-4 flex items-center justify-between select-none z-50 shadow-2xl">
       {/* Left: Track Information */}
-      <div className="flex items-center gap-2.5 md:gap-3 flex-1 md:w-1/4 min-w-0 pr-2">
-        <div className="relative group cursor-pointer flex-shrink-0" onClick={toggleMiniPlayer}>
+      <div
+        onClick={onOpenNowPlaying}
+        className="flex items-center gap-2.5 md:gap-3 flex-1 md:w-1/4 min-w-0 pr-2 cursor-pointer group"
+      >
+        <div className="relative flex-shrink-0">
           <img
             src={currentTrack.thumbnailUrl}
             alt={currentTrack.title}
@@ -82,10 +86,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
         </div>
 
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-white text-xs md:text-sm font-medium hover:underline cursor-pointer truncate">
+          <span className="text-white text-xs md:text-sm font-medium hover:underline truncate">
             {currentTrack.title}
           </span>
-          <span className="text-spotify-subtext text-[10px] md:text-xs hover:underline cursor-pointer truncate">
+          <span className="text-spotify-subtext text-[10px] md:text-xs hover:underline truncate">
             {currentTrack.artist}
           </span>
         </div>
@@ -193,7 +197,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
       <div className="hidden md:flex items-center justify-end w-1/4 gap-3">
         <button
           onClick={onOpenQueue}
-          className="text-spotify-subtext hover:text-white transition-colors"
+          className="text-spotify-subtext hover:text-white transition-colors p-1"
           title="Current Queue"
         >
           <ListMusic className="w-5 h-5" />
@@ -202,7 +206,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue }) => {
         <button
           onClick={toggleMiniPlayer}
           className={cn(
-            'transition-colors',
+            'transition-colors p-1',
             isMiniPlayerOpen ? 'text-spotify-green' : 'text-spotify-subtext hover:text-white'
           )}
           title="Toggle Video Player"

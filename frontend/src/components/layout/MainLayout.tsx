@@ -5,12 +5,16 @@ import { TopNavbar } from './TopNavbar';
 import { BottomPlayer } from '../player/BottomPlayer';
 import { MiniPlayer } from '../player/MiniPlayer';
 import { MobileNav } from './MobileNav';
+import { QueueDrawer } from '../player/QueueDrawer';
+import { NowPlayingModal } from '../player/NowPlayingModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { useLibraryStore } from '../../stores/useLibraryStore';
 
 export const MainLayout: React.FC = () => {
   const { createPlaylist } = useLibraryStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isNowPlayingOpen, setIsNowPlayingOpen] = useState(false);
   const [playlistTitle, setPlaylistTitle] = useState('');
   const [playlistDesc, setPlaylistDesc] = useState('');
 
@@ -42,7 +46,23 @@ export const MainLayout: React.FC = () => {
       <MiniPlayer />
 
       {/* Persistent Bottom Audio Player */}
-      <BottomPlayer />
+      <BottomPlayer
+        onOpenQueue={() => setIsQueueOpen(true)}
+        onOpenNowPlaying={() => setIsNowPlayingOpen(true)}
+      />
+
+      {/* Full-Screen Spotify-like Now Playing Modal */}
+      <NowPlayingModal
+        isOpen={isNowPlayingOpen}
+        onClose={() => setIsNowPlayingOpen(false)}
+        onOpenQueue={() => setIsQueueOpen(true)}
+      />
+
+      {/* Queue Drawer */}
+      <QueueDrawer
+        isOpen={isQueueOpen}
+        onClose={() => setIsQueueOpen(false)}
+      />
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileNav />
