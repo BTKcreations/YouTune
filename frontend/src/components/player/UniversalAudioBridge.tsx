@@ -193,13 +193,15 @@ export const UniversalAudioBridge: React.FC = () => {
   useEffect(() => {
     if (!currentTrack || !playerRef.current) return;
     try {
-      if (typeof playerRef.current.loadVideoById === 'function') {
-        setPlaybackState('loading');
-        updateMediaSession(currentTrack);
-        addToHistory(currentTrack);
-        PersonalDiscoveryEngine.logPlay(currentTrack);
+      updateMediaSession(currentTrack);
+      addToHistory(currentTrack);
+      PersonalDiscoveryEngine.logPlay(currentTrack);
 
+      if (typeof playerRef.current.loadVideoById === 'function') {
         playerRef.current.loadVideoById(currentTrack.youtubeId);
+        playerRef.current.playVideo();
+      } else if (typeof playerRef.current.cueVideoById === 'function') {
+        playerRef.current.cueVideoById(currentTrack.youtubeId);
         playerRef.current.playVideo();
       }
     } catch (e) {
@@ -239,7 +241,7 @@ export const UniversalAudioBridge: React.FC = () => {
   // Time progress polling
   useEffect(() => {
     timeUpdateInterval.current = setInterval(() => {
-      if (playerRef.current?.getCurrentTime && playbackState === 'playing') {
+      if (playerRef.current?.getCurrentTime) {
         const time = playerRef.current.getCurrentTime();
         if (typeof time === 'number' && !isNaN(time)) {
           setCurrentTime(time);
@@ -262,7 +264,7 @@ export const UniversalAudioBridge: React.FC = () => {
     return () => {
       if (timeUpdateInterval.current) clearInterval(timeUpdateInterval.current);
     };
-  }, [playbackState]);
+  }, []);
 
   // Sleep timer interval
   useEffect(() => {
@@ -290,10 +292,19 @@ export const UniversalAudioBridge: React.FC = () => {
 
   return (
     <div
-      className="fixed -bottom-[9999px] -right-[9999px] w-1 h-1 pointer-events-none opacity-0 overflow-hidden"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        right: 0,
+        width: '1px',
+        height: '1px',
+        opacity: 0.01,
+        pointerEvents: 'none',
+        zIndex: -1,
+      }}
       aria-hidden="true"
     >
-      <div id="yt-universal-player" className="w-full h-full" />
+      <div id="yt-universal-player" style={{ width: '100%', height: '100%' }} />
     </div>
   );
 };

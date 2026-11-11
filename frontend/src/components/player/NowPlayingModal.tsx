@@ -80,8 +80,7 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
     if (!currentTrack || isDownloading || isDownloaded) return;
     setIsDownloading(true);
     try {
-      const url = await ClientMusicService.getAudioStreamUrl(currentTrack.youtubeId);
-      const ok = await OfflineStorageService.downloadTrack(currentTrack, url);
+      const ok = await OfflineStorageService.downloadTrack(currentTrack);
       if (ok) setIsDownloaded(true);
     } catch (e) {
       console.error(e);

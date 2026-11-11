@@ -82,14 +82,24 @@ export class LyricsService {
 
       // Try search endpoint if direct get 404s
       const searchRes = await fetch(
-        `https://lrclib.net/api/search?q=${encodeURIComponent(`${cleanTitle} ${cleanArtist}`)}`
+        `https://lrclib.net/api/search?track_name=${encodeURIComponent(cleanTitle)}`
       );
       if (searchRes.ok) {
         const results = await searchRes.json();
-        if (results && results.length > 0 && results[0].syncedLyrics) {
-          const parsed = this.parseLRC(results[0].syncedLyrics);
-          this.cache.set(cacheKey, parsed);
-          return parsed;
+        if (results && results.length > 0) {
+          const match = results.find((r: any) => r.syncedLyrics) || results[0];
+          if (match && match.syncedLyrics) {
+            const parsed = this.parseLRC(match.syncedLyrics);
+            this.cache.set(cacheKey, parsed);
+            return parsed;
+          } else if (match && match.plainLyrics) {
+            const plain = match.plainLyrics
+              .split('\n')
+              .filter((l: string) => l.trim())
+              .map((text: string, idx: number) => ({ time: idx * 5, text }));
+            this.cache.set(cacheKey, plain);
+            return plain;
+          }
         }
       }
     } catch (e) {

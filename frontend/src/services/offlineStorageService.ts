@@ -13,18 +13,12 @@ export class OfflineStorageService {
   /**
    * Save track audio blob and cover art into browser Cache API for offline listening
    */
-  static async downloadTrack(track: Track, audioStreamUrl: string): Promise<boolean> {
+  static async downloadTrack(track: Track): Promise<boolean> {
     try {
       if (!('caches' in window)) return false;
 
       const cache = await caches.open(CACHE_NAME);
-      const audioUrl = `/offline/audio/${track.youtubeId}`;
       const imgUrl = `/offline/img/${track.youtubeId}`;
-
-      // Fetch and store audio
-      const audioResp = await fetch(audioStreamUrl);
-      if (!audioResp.ok) return false;
-      await cache.put(audioUrl, audioResp);
 
       // Fetch and store thumbnail
       try {
@@ -34,7 +28,7 @@ export class OfflineStorageService {
         // Thumbnail cache optional
       }
 
-      // Save metadata
+      // Save metadata to offline library
       const tracks = this.getDownloadedTracks();
       if (!tracks.some((t) => t.track.id === track.id)) {
         tracks.unshift({ track, downloadedAt: Date.now() });

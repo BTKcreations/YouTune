@@ -122,7 +122,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       set({
         currentIndex: nextIndex,
         currentTrack: nextT,
-        playbackState: 'loading',
+        playbackState: 'playing',
         currentTime: 0,
         duration: nextT.durationSec || 0,
       });
@@ -131,7 +131,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       set({
         currentIndex: 0,
         currentTrack: nextT,
-        playbackState: 'loading',
+        playbackState: 'playing',
         currentTime: 0,
         duration: nextT.durationSec || 0,
       });
@@ -147,6 +147,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     // If more than 3 seconds in, reset current track to 0
     if (currentTime > 3) {
       set({ currentTime: 0 });
+      const handler = get().seekPlayer;
+      if (handler) handler(0);
       return;
     }
 
@@ -156,12 +158,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       set({
         currentIndex: prevIndex,
         currentTrack: prevT,
-        playbackState: 'loading',
+        playbackState: 'playing',
         currentTime: 0,
         duration: prevT.durationSec || 0,
       });
     } else {
       set({ currentTime: 0 });
+      const handler = get().seekPlayer;
+      if (handler) handler(0);
     }
   },
 
