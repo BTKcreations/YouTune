@@ -3,6 +3,8 @@ import { usePlayerStore } from '../../stores/usePlayerStore';
 import { useLibraryStore } from '../../stores/useLibraryStore';
 import { ClientMusicService } from '../../services/clientMusicService';
 import { PersonalDiscoveryEngine } from '../../services/discoveryEngine';
+import { equalizerManager } from '../../services/equalizerService';
+import { OfflineStorageService } from '../../services/offlineStorageService';
 
 export const HTML5AudioBridge: React.FC = () => {
   const {
@@ -16,6 +18,13 @@ export const HTML5AudioBridge: React.FC = () => {
     nextTrack,
     prevTrack,
     setSeekPlayerHandler,
+    sleepTimerRemaining,
+    setSleepTimer,
+    pauseTrack,
+    queue,
+    currentIndex,
+    autoPlayRadio,
+    addToQueue,
   } = usePlayerStore();
 
   const { addToHistory } = useLibraryStore();
@@ -74,6 +83,11 @@ export const HTML5AudioBridge: React.FC = () => {
     audio.preload = 'auto';
     audio.volume = isMuted ? 0 : volume / 100;
     audioRef.current = audio;
+    try {
+      equalizerManager.init(audio);
+    } catch (e) {
+      console.warn('Equalizer audio init deferred', e);
+    }
 
     audio.addEventListener('play', () => {
       setPlaybackState('playing');
@@ -106,8 +120,22 @@ export const HTML5AudioBridge: React.FC = () => {
       }
     });
 
-    audio.addEventListener('ended', () => {
+    audio.addEventListener('ended', async () => {
       setPlaybackState('ended');
+      if (currentIndex >= queue.length - 1 && autoPlayRadio && currentTrack) {
+        try {
+          const searchResult = await ClientMusicService.search(`${currentTrack.artist} song`);
+          const radioTracks = searchResult.tracks || [];
+          if (radioTracks.length) {
+            const nextRadio = radioTracks.find((t: any) => t.youtubeId !== currentTrack.youtubeId);
+            if (nextRadio) {
+              addToQueue(nextRadio);
+            }
+          }
+        } catch (e) {
+          console.warn('Radio autoplay error', e);
+        }
+      }
       nextTrack();
     });
 
@@ -142,8 +170,12 @@ export const HTML5AudioBridge: React.FC = () => {
         addToHistory(currentTrack);
         PersonalDiscoveryEngine.logPlay(currentTrack);
 
-        // Fetch high quality audio stream
-        const streamUrl = await ClientMusicService.getAudioStreamUrl(currentTrack.youtubeId);
+        // Check offline cache first
+        let streamUrl = await OfflineStorageService.getOfflineAudioUrl(currentTrack.youtubeId);
+        if (!streamUrl) {
+          // Fetch high quality audio stream
+          streamUrl = await ClientMusicService.getAudioStreamUrl(currentTrack.youtubeId);
+        }
         if (isCancelled || !audioRef.current) return;
 
         audioRef.current.src = streamUrl;
@@ -166,6 +198,30 @@ export const HTML5AudioBridge: React.FC = () => {
       isCancelled = true;
     };
   }, [currentTrack?.youtubeId]);
+
+  // Sleep timer interval
+  useEffect(() => {
+    if (sleepTimerRemaining === null) return;
+    if (sleepTimerRemaining <= 0) {
+      pauseTrack();
+      setSleepTimer(null);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      usePlayerStore.setState((state) => {
+        if (state.sleepTimerRemaining === null) return {};
+        const remaining = state.sleepTimerRemaining - 1;
+        if (remaining <= 0) {
+          state.pauseTrack();
+          return { sleepTimerRemaining: null };
+        }
+        return { sleepTimerRemaining: remaining };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sleepTimerRemaining]);
 
   // Sync play / pause
   useEffect(() => {

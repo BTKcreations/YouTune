@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronDown,
   Play,
@@ -12,10 +12,20 @@ import {
   VolumeX,
   ExternalLink,
   ListMusic,
+  Sliders,
+  Moon,
+  Download,
+  Mic2,
+  Check,
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/usePlayerStore';
 import { useLibraryStore } from '../../stores/useLibraryStore';
 import { formatTime, cn } from '../../utils/formatters';
+import { LyricsService, LyricLine } from '../../services/lyricsService';
+import { OfflineStorageService } from '../../services/offlineStorageService';
+import { ClientMusicService } from '../../services/clientMusicService';
+import { EqualizerModal } from './EqualizerModal';
+import { SleepTimerModal } from './SleepTimerModal';
 
 interface NowPlayingModalProps {
   isOpen: boolean;
@@ -48,6 +58,37 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
   } = usePlayerStore();
 
   const { isTrackLiked, toggleLikeTrack } = useLibraryStore();
+
+  const [isEqOpen, setIsEqOpen] = useState(false);
+  const [isSleepOpen, setIsSleepOpen] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [lyrics, setLyrics] = useState<LyricLine[]>([]);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloaded, setIsDownloaded] = useState(false);
+
+  useEffect(() => {
+    if (!currentTrack) return;
+    setIsDownloaded(OfflineStorageService.isTrackDownloaded(currentTrack.youtubeId));
+    
+    // Fetch lyrics for current track
+    LyricsService.getLyrics(currentTrack.title, currentTrack.artist, currentTrack.durationSec).then((lines) => {
+      setLyrics(lines);
+    });
+  }, [currentTrack?.id]);
+
+  const handleDownload = async () => {
+    if (!currentTrack || isDownloading || isDownloaded) return;
+    setIsDownloading(true);
+    try {
+      const url = await ClientMusicService.getAudioStreamUrl(currentTrack.youtubeId);
+      const ok = await OfflineStorageService.downloadTrack(currentTrack, url);
+      if (ok) setIsDownloaded(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen || !currentTrack) return null;
 
@@ -88,15 +129,95 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
         </button>
       </div>
 
-      {/* Big Center Artwork */}
-      <div className="flex-1 flex items-center justify-center py-4 my-auto">
-        <div className="w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl border border-neutral-700/50 relative group">
-          <img
-            src={currentTrack.thumbnailUrl}
-            alt={currentTrack.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        </div>
+      {/* Big Center Artwork or Synchronized Lyrics */}
+      <div className="flex-1 flex items-center justify-center py-4 my-auto relative">
+        {!showLyrics ? (
+          <div className="w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl border border-neutral-700/50 relative group">
+            <img
+              src={currentTrack.thumbnailUrl}
+              alt={currentTrack.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+        ) : (
+          <div className="w-full max-w-sm h-80 overflow-y-auto px-4 py-6 space-y-4 text-center rounded-2xl bg-neutral-900/60 backdrop-blur-md border border-neutral-800 scroll-smooth">
+            {lyrics.length > 0 ? (
+              lyrics.map((line, idx) => {
+                const isActive =
+                  currentTime >= line.time &&
+                  (idx === lyrics.length - 1 || currentTime < lyrics[idx + 1].time);
+
+                return (
+                  <p
+                    key={idx}
+                    onClick={() => seekTo(line.time)}
+                    className={cn(
+                      'text-lg font-bold transition-all duration-300 cursor-pointer',
+                      isActive
+                        ? 'text-spotify-green scale-105 drop-shadow-[0_0_12px_rgba(29,185,84,0.4)]'
+                        : 'text-neutral-500 hover:text-neutral-300'
+                    )}
+                  >
+                    {line.text}
+                  </p>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-neutral-500">
+                <Mic2 className="w-8 h-8 mb-2 opacity-50" />
+                <p className="text-sm">No synchronized lyrics found for this track</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Action shortcuts: Lyrics Toggle, Equalizer, Sleep Timer, Offline Download */}
+      <div className="w-full max-w-sm mx-auto flex items-center justify-between px-2 py-2 text-neutral-400">
+        <button
+          onClick={() => setShowLyrics(!showLyrics)}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors',
+            showLyrics ? 'bg-spotify-green text-black' : 'bg-neutral-800/80 hover:text-white'
+          )}
+          title="Toggle Synchronized Lyrics"
+        >
+          <Mic2 className="w-3.5 h-3.5" />
+          <span>Lyrics</span>
+        </button>
+
+        <button
+          onClick={() => setIsEqOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-800/80 hover:text-white text-xs font-semibold transition-colors"
+          title="Equalizer & Sound Profiles"
+        >
+          <Sliders className="w-3.5 h-3.5 text-spotify-green" />
+          <span>EQ</span>
+        </button>
+
+        <button
+          onClick={() => setIsSleepOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-800/80 hover:text-white text-xs font-semibold transition-colors"
+          title="Sleep Timer"
+        >
+          <Moon className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Sleep</span>
+        </button>
+
+        <button
+          onClick={handleDownload}
+          disabled={isDownloading || isDownloaded}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors',
+            isDownloaded
+              ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+              : 'bg-neutral-800/80 hover:text-white'
+          )}
+          title={isDownloaded ? 'Saved Offline' : 'Download for Offline'}
+        >
+          {isDownloaded ? <Check className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+          <span>{isDownloaded ? 'Saved' : isDownloading ? 'Saving...' : 'Offline'}</span>
+        </button>
       </div>
 
       {/* Song Info & Like */}
@@ -207,6 +328,10 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
           <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
+
+      {/* Submodals for Equalizer and Sleep Timer */}
+      <EqualizerModal isOpen={isEqOpen} onClose={() => setIsEqOpen(false)} />
+      <SleepTimerModal isOpen={isSleepOpen} onClose={() => setIsSleepOpen(false)} />
     </div>
   );
 };
