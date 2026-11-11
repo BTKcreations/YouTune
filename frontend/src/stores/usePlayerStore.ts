@@ -13,6 +13,8 @@ interface PlayerState {
   shuffle: boolean;
   repeat: RepeatMode;
   isMiniPlayerOpen: boolean;
+  sleepTimerRemaining: number | null;
+  autoPlayRadio: boolean;
   
   // Actions
   playTrack: (track: Track, newQueue?: Track[]) => void;
@@ -28,6 +30,8 @@ interface PlayerState {
   toggleMute: () => void;
   toggleShuffle: () => void;
   cycleRepeat: () => void;
+  setSleepTimer: (minutes: number | null) => void;
+  toggleAutoPlayRadio: () => void;
   setQueue: (tracks: Track[]) => void;
   addToQueue: (track: Track) => void;
   removeFromQueue: (index: number) => void;
@@ -50,6 +54,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   shuffle: false,
   repeat: 'off',
   isMiniPlayerOpen: false,
+  sleepTimerRemaining: null,
+  autoPlayRadio: true,
 
   playTrack: (track, newQueue) => {
     let queue = newQueue || get().queue;
@@ -186,6 +192,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const current = get().repeat;
     const next = modes[(modes.indexOf(current) + 1) % modes.length];
     set({ repeat: next });
+  },
+
+  setSleepTimer: (minutes: number | null) => {
+    set({ sleepTimerRemaining: minutes ? minutes * 60 : null });
+  },
+
+  toggleAutoPlayRadio: () => {
+    set((state) => ({ autoPlayRadio: !state.autoPlayRadio }));
   },
 
   setQueue: (tracks) => {
