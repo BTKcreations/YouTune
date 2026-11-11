@@ -28,6 +28,7 @@ export const UniversalAudioBridge: React.FC = () => {
   const { addToHistory } = useLibraryStore();
   const playerRef = useRef<any>(null);
   const timeUpdateInterval = useRef<any>(null);
+  const watchdogTimer = useRef<any>(null);
 
   // Initialize Media Session API for mobile lock-screen & notification controls
   const updateMediaSession = (track: typeof currentTrack) => {
@@ -92,9 +93,9 @@ export const UniversalAudioBridge: React.FC = () => {
           videoId: currentTrack ? currentTrack.youtubeId : 'dQw4w9WgXcQ',
           playerVars: {
             autoplay: 1,
-            controls: 0,
-            disablekb: 1,
-            fs: 0,
+            controls: 1, // Standard controls for compliance and user interaction
+            disablekb: 0,
+            fs: 1,
             modestbranding: 1,
             playsinline: 1,
             rel: 0,
@@ -116,19 +117,25 @@ export const UniversalAudioBridge: React.FC = () => {
             },
             onStateChange: async (event: any) => {
               if (!isMounted) return;
-              if (event.data === 1) { // Playing
+              // 1: Playing, 2: Paused, 3: Buffering, 0: Ended
+              if (event.data === 1) {
+                // Clear watchdog since playback successfully started
+                if (watchdogTimer.current) {
+                  clearTimeout(watchdogTimer.current);
+                  watchdogTimer.current = null;
+                }
                 setPlaybackState('playing');
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 if (playerRef.current?.getDuration) {
                   const d = playerRef.current.getDuration();
                   if (d > 0) setDuration(d);
                 }
-              } else if (event.data === 2) { // Paused
+              } else if (event.data === 2) {
                 setPlaybackState('paused');
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-              } else if (event.data === 3) { // Buffering
+              } else if (event.data === 3) {
                 setPlaybackState('loading');
-              } else if (event.data === 0) { // Ended
+              } else if (event.data === 0) {
                 setPlaybackState('ended');
                 // Smart Autoplay Radio when queue ends
                 if (currentIndex >= queue.length - 1 && autoPlayRadio && currentTrack) {
@@ -147,6 +154,10 @@ export const UniversalAudioBridge: React.FC = () => {
             onError: (event: any) => {
               console.error('YouTube Player Error code:', event.data);
               setPlaybackState('error');
+              // On unplayable video, auto-advance after short pause
+              setTimeout(() => {
+                if (isMounted) nextTrack();
+              }, 1500);
             },
           },
         });
@@ -158,23 +169,19 @@ export const UniversalAudioBridge: React.FC = () => {
     if (window.YT && window.YT.Player) {
       createPlayer();
     } else {
-      const checkInterval = setInterval(() => {
-        if (window.YT && window.YT.Player) {
-          clearInterval(checkInterval);
-          createPlayer();
-        }
-      }, 150);
-
-      const prev = window.onYouTubeIframeAPIReady;
+      const prevCallback = window.onYouTubeIframeAPIReady;
       window.onYouTubeIframeAPIReady = () => {
-        if (prev) prev();
+        if (prevCallback) prevCallback();
         createPlayer();
       };
 
-      return () => {
-        isMounted = false;
-        clearInterval(checkInterval);
-      };
+      // Load YouTube IFrame API script if not loaded
+      if (!document.getElementById('yt-iframe-api-script')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api-script';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.body.appendChild(tag);
+      }
     }
 
     setSeekPlayerHandler((timeSec: number) => {
@@ -186,10 +193,11 @@ export const UniversalAudioBridge: React.FC = () => {
     return () => {
       isMounted = false;
       if (timeUpdateInterval.current) clearInterval(timeUpdateInterval.current);
+      if (watchdogTimer.current) clearTimeout(watchdogTimer.current);
     };
   }, []);
 
-  // Track changes: load into YT Player
+  // Track changes: load into YT Player with 2.5s watchdog timer
   useEffect(() => {
     if (!currentTrack || !playerRef.current) return;
     try {
@@ -197,13 +205,27 @@ export const UniversalAudioBridge: React.FC = () => {
       addToHistory(currentTrack);
       PersonalDiscoveryEngine.logPlay(currentTrack);
 
+      setPlaybackState('loading');
+
       if (typeof playerRef.current.loadVideoById === 'function') {
         playerRef.current.loadVideoById(currentTrack.youtubeId);
-        playerRef.current.playVideo();
+        playerRef.current.playVideo?.();
       } else if (typeof playerRef.current.cueVideoById === 'function') {
         playerRef.current.cueVideoById(currentTrack.youtubeId);
-        playerRef.current.playVideo();
+        playerRef.current.playVideo?.();
       }
+
+      // Watchdog timer (2.5s) to guarantee playback starts or attempts fallback
+      if (watchdogTimer.current) clearTimeout(watchdogTimer.current);
+      watchdogTimer.current = setTimeout(() => {
+        if (playerRef.current?.getPlayerState) {
+          const state = playerRef.current.getPlayerState();
+          // If not playing (1) or buffering (3), force a play command
+          if (state !== 1 && state !== 3) {
+            playerRef.current.playVideo?.();
+          }
+        }
+      }, 2500);
     } catch (e) {
       console.warn('Track switch error in YT Player', e);
     }
@@ -290,21 +312,8 @@ export const UniversalAudioBridge: React.FC = () => {
     return () => clearInterval(interval);
   }, [sleepTimerRemaining]);
 
+  // Render iframe inside the container with valid dimensions and visibility
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        right: 0,
-        width: '1px',
-        height: '1px',
-        opacity: 0.01,
-        pointerEvents: 'none',
-        zIndex: -1,
-      }}
-      aria-hidden="true"
-    >
-      <div id="yt-universal-player" style={{ width: '100%', height: '100%' }} />
-    </div>
+    <div id="yt-universal-player" className="w-full h-full" />
   );
 };

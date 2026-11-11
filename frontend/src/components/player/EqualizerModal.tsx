@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sliders, Volume2, Sparkles, Check } from 'lucide-react';
+import { Sliders, Volume2, Sparkles, Check, Info } from 'lucide-react';
 import { EQ_FREQUENCIES, EQ_PRESETS, EqualizerPreset, equalizerManager } from '../../services/equalizerService';
 
 interface EqualizerModalProps {
@@ -43,6 +43,14 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
           >
             Done
           </button>
+        </div>
+
+        {/* Informative banner on YouTube Native Audio & WebAudio DSP */}
+        <div className="flex items-start gap-2.5 bg-neutral-900/80 p-3 rounded-xl border border-neutral-800 text-xs text-gray-300">
+          <Info className="w-4 h-4 text-spotify-green flex-shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            YouTube streams utilize official YouTube high-fidelity audio leveling. Custom 10-band equalization applies to direct & local playback sessions.
+          </p>
         </div>
 
         {/* Presets Pills */}
