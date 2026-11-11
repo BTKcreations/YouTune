@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import { usePlayerStore } from '../../stores/usePlayerStore';
-import { HTML5AudioBridge } from './HTML5AudioBridge';
+import { UniversalAudioBridge } from './UniversalAudioBridge';
 import { cn } from '../../utils/formatters';
 
 export const MiniPlayer: React.FC = () => {
@@ -9,8 +9,8 @@ export const MiniPlayer: React.FC = () => {
 
   return (
     <>
-      {/* Background HTML5 Audio Engine & Media Session Provider */}
-      <HTML5AudioBridge />
+      {/* Universal YouTube Player Engine & Media Session Provider */}
+      <UniversalAudioBridge />
 
       <div
         className={cn(
