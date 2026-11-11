@@ -6,6 +6,7 @@ import { ClientMusicService } from '../services/clientMusicService';
 import { PersonalDiscoveryEngine } from '../services/discoveryEngine';
 import { usePlayerStore } from '../stores/usePlayerStore';
 import { useLibraryStore } from '../stores/useLibraryStore';
+import { usePreferencesStore } from '../stores/usePreferencesStore';
 import { MusicCard } from '../components/common/MusicCard';
 import { TrackRow } from '../components/common/TrackRow';
 
@@ -13,6 +14,7 @@ export const Home: React.FC = () => {
   const navigate = useNavigate();
   const { playTrack } = usePlayerStore();
   const { playlists } = useLibraryStore();
+  const { userName, songLanguages, genres } = usePreferencesStore();
 
   const [recentlyPlayed, setRecentlyPlayed] = useState<Track[]>([]);
   const [adaptiveSections, setAdaptiveSections] = useState<{ title: string; subtitle: string; artists: string[] }[]>([]);
@@ -28,8 +30,11 @@ export const Home: React.FC = () => {
         const sections = PersonalDiscoveryEngine.getAdaptiveSections();
         setAdaptiveSections(sections);
 
-        // Fetch curated trending for the day
-        const seedQuery = recent.length > 0 ? `${recent[0].artist} songs` : 'telugu hits trending';
+        // Fetch curated trending tailored to selected language & genre preferences
+        const langQuery = songLanguages.length > 0 ? songLanguages[0] : 'Telugu';
+        const genreQuery = genres.length > 0 ? genres[0] : 'Hits';
+        const seedQuery = recent.length > 0 ? `${recent[0].artist} songs` : `${langQuery} ${genreQuery} trending`;
+
         const res = await ClientMusicService.search(seedQuery);
         setTrendingTracks(res.tracks);
       } catch (err) {
@@ -39,13 +44,12 @@ export const Home: React.FC = () => {
       }
     }
     loadData();
-  }, []);
+  }, [songLanguages, genres]);
 
   const getGreeting = () => {
     const hours = new Date().getHours();
-    if (hours < 12) return 'Good morning';
-    if (hours < 18) return 'Good afternoon';
-    return 'Good evening';
+    const timeGreeting = hours < 12 ? 'Good morning' : hours < 18 ? 'Good afternoon' : 'Good evening';
+    return `${timeGreeting}, ${userName || 'Friend'}`;
   };
 
   // Hero tracks

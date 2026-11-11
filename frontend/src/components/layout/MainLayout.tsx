@@ -5,6 +5,7 @@ import { TopNavbar } from './TopNavbar';
 import { BottomPlayer } from '../player/BottomPlayer';
 import { MiniPlayer } from '../player/MiniPlayer';
 import { MobileNav } from './MobileNav';
+import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { useLibraryStore } from '../../stores/useLibraryStore';
 
 export const MainLayout: React.FC = () => {
@@ -45,6 +46,9 @@ export const MainLayout: React.FC = () => {
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileNav />
+
+      {/* New User Welcome Onboarding Modal */}
+      <OnboardingModal />
 
       {/* Create Playlist Modal */}
       {isModalOpen && (
