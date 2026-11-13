@@ -17,10 +17,12 @@ import {
   Download,
   Mic2,
   Check,
+  Video,
+  Music2,
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/usePlayerStore';
 import { useLibraryStore } from '../../stores/useLibraryStore';
-import { formatTime, cn } from '../../utils/formatters';
+import { formatTime, cn, triggerHaptic } from '../../utils/formatters';
 import { LyricsService, LyricLine } from '../../services/lyricsService';
 import { OfflineStorageService } from '../../services/offlineStorageService';
 import { ClientMusicService } from '../../services/clientMusicService';
@@ -55,6 +57,8 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
     toggleMute,
     toggleShuffle,
     cycleRepeat,
+    isVideoMode,
+    toggleVideoMode,
   } = usePlayerStore();
 
   const { isTrackLiked, toggleLikeTrack } = useLibraryStore();
@@ -111,9 +115,35 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
         </button>
 
         <div className="flex flex-col items-center">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-spotify-subtext">
-            Playing From Your Catalog
-          </span>
+          {/* Song / Video Pill Switch */}
+          <div className="inline-flex items-center bg-black/60 p-1 rounded-full border border-neutral-700/60 shadow-inner mb-1.5">
+            <button
+              onClick={() => {
+                triggerHaptic('light');
+                if (isVideoMode) toggleVideoMode();
+              }}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all',
+                !isVideoMode ? 'bg-white text-black shadow' : 'text-neutral-400 hover:text-white'
+              )}
+            >
+              <Music2 className="w-3.5 h-3.5" />
+              <span>Song</span>
+            </button>
+            <button
+              onClick={() => {
+                triggerHaptic('medium');
+                if (!isVideoMode) toggleVideoMode();
+              }}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all',
+                isVideoMode ? 'bg-spotify-green text-black font-extrabold shadow' : 'text-neutral-400 hover:text-white'
+              )}
+            >
+              <Video className="w-3.5 h-3.5" />
+              <span>Video</span>
+            </button>
+          </div>
           <span className="text-xs font-semibold text-white truncate max-w-[200px]">
             {currentTrack.album?.title || 'YouTune Stream'}
           </span>
@@ -128,9 +158,19 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
         </button>
       </div>
 
-      {/* Big Center Artwork or Synchronized Lyrics */}
+      {/* Big Center Artwork, Live Video, or Synchronized Lyrics */}
       <div className="flex-1 flex items-center justify-center py-4 my-auto relative">
-        {!showLyrics ? (
+        {isVideoMode ? (
+          <div className="w-full max-w-xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-neutral-700 bg-black relative">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${currentTrack.youtubeId}?autoplay=1&playsinline=1&controls=1&modestbranding=1&rel=0&enablejsapi=1`}
+              title={currentTrack.title}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : !showLyrics ? (
           <div className="w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl border border-neutral-700/50 relative group">
             <img
               src={currentTrack.thumbnailUrl}

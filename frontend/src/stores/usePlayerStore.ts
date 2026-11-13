@@ -13,6 +13,7 @@ interface PlayerState {
   shuffle: boolean;
   repeat: RepeatMode;
   isMiniPlayerOpen: boolean;
+  isVideoMode: boolean;
   sleepTimerRemaining: number | null;
   autoPlayRadio: boolean;
   
@@ -40,6 +41,8 @@ interface PlayerState {
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
   toggleMiniPlayer: () => void;
+  toggleVideoMode: () => void;
+  setVideoMode: (enabled: boolean) => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -54,6 +57,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   shuffle: false,
   repeat: 'off',
   isMiniPlayerOpen: false,
+  isVideoMode: false,
   sleepTimerRemaining: null,
   autoPlayRadio: true,
 
@@ -237,4 +241,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setCurrentTime: (currentTime) => set({ currentTime }),
   setDuration: (duration) => set({ duration }),
   toggleMiniPlayer: () => set((state) => ({ isMiniPlayerOpen: !state.isMiniPlayerOpen })),
+  toggleVideoMode: () => set((state) => ({ isVideoMode: !state.isVideoMode })),
+  setVideoMode: (isVideoMode) => set({ isVideoMode }),
 }));

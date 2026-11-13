@@ -11,6 +11,8 @@ import {
   Heart,
   Maximize2,
   ListMusic,
+  Video,
+  Music2,
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/usePlayerStore';
 import { useLibraryStore } from '../../stores/useLibraryStore';
@@ -41,6 +43,8 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
     cycleRepeat,
     toggleMiniPlayer,
     isMiniPlayerOpen,
+    isVideoMode,
+    toggleVideoMode,
   } = usePlayerStore();
 
   const { isTrackLiked, toggleLikeTrack } = useLibraryStore();
@@ -268,6 +272,29 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
 
       {/* Right: Volume & Extra Utilities */}
       <div className="hidden md:flex items-center justify-end w-1/4 gap-3">
+        {/* Song / Video Quick Toggle */}
+        <button
+          onClick={() => {
+            triggerHaptic('medium');
+            toggleVideoMode();
+            if (!isVideoMode) {
+              onOpenNowPlaying?.();
+            }
+          }}
+          className={cn(
+            'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green',
+            isVideoMode
+              ? 'bg-spotify-green text-black font-extrabold shadow'
+              : 'bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700'
+          )}
+          title={isVideoMode ? 'Switch to Audio' : 'Switch to Official Music Video'}
+          aria-label={isVideoMode ? 'Switch to Audio mode' : 'Switch to Video mode'}
+          aria-pressed={isVideoMode}
+        >
+          {isVideoMode ? <Video className="w-3.5 h-3.5" /> : <Music2 className="w-3.5 h-3.5" />}
+          <span>{isVideoMode ? 'Video' : 'Song'}</span>
+        </button>
+
         <button
           onClick={onOpenQueue}
           className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
