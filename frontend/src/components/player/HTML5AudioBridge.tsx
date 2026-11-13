@@ -18,6 +18,8 @@ export const HTML5AudioBridge: React.FC = () => {
     prevTrack,
     setSeekPlayerHandler,
     isVideoMode,
+    queue,
+    currentIndex,
   } = usePlayerStore();
 
   const { addToHistory } = useLibraryStore();
@@ -162,6 +164,14 @@ export const HTML5AudioBridge: React.FC = () => {
         audioRef.current.load();
         await audioRef.current.play();
         setPlaybackState('playing');
+
+        // Predictive Background Buffer: pre-cache the next 3 songs in the queue
+        if (queue.length > 0 && currentIndex >= 0) {
+          const upcoming = queue.slice(currentIndex + 1, currentIndex + 4);
+          if (upcoming.length > 0) {
+            OfflineStorageService.predictiveBufferQueue(upcoming);
+          }
+        }
       } catch (err) {
         console.warn('Stream play error, falling back', err);
         // Fallback direct url
