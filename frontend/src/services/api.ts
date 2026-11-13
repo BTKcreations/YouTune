@@ -1,6 +1,7 @@
 import { ApiResponse, SearchResult } from '../types/api';
 import { Track, Playlist, Artist, GenreCategory } from '../types/music';
 import { MOCK_TRACKS, MOCK_PLAYLISTS, MOCK_ARTISTS, MOCK_GENRES } from '../utils/mockData';
+import { ClientMusicService } from './clientMusicService';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -93,6 +94,30 @@ class ApiService {
     } catch (e) {
       // Fallback
     }
+
+    // Dynamic regional search query mapping when backend is unavailable
+    const regionalQueries: Record<string, string> = {
+      US: 'Billboard Hot 100 top music',
+      GB: 'UK Top 40 official chart songs',
+      GLOBAL: 'Global top 50 viral hits',
+      JP: 'J-Pop Top hits trending music',
+      KR: 'K-Pop Top hits trending songs',
+      BR: 'Musicas mais tocadas Brasil top hits',
+    };
+
+    const targetQuery = genre
+      ? `${genre} top hits music`
+      : regionalQueries[region] || `${region} top trending music`;
+
+    try {
+      const clientRes = await ClientMusicService.search(targetQuery);
+      if (clientRes.tracks && clientRes.tracks.length > 0) {
+        return clientRes.tracks;
+      }
+    } catch {
+      // Fallback to static mock
+    }
+
     return MOCK_TRACKS;
   }
 
@@ -177,6 +202,20 @@ class ApiService {
       color: '#1E3264',
       searchQuery: `${genreId} top hits`,
     };
+
+    // Client-side dynamic search for genre tracks if backend is absent
+    try {
+      const clientRes = await ClientMusicService.search(found.searchQuery || `${found.title} songs`);
+      if (clientRes.tracks && clientRes.tracks.length > 0) {
+        return {
+          genre: found,
+          tracks: clientRes.tracks,
+        };
+      }
+    } catch {
+      // Fallback
+    }
+
     return {
       genre: found,
       tracks: MOCK_TRACKS,

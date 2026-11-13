@@ -32,7 +32,7 @@ export const GenreExplorer: React.FC = () => {
         {genres.map((genre) => (
           <div
             key={genre.id}
-            onClick={() => navigate(`/search?q=${encodeURIComponent(genre.searchQuery)}`)}
+            onClick={() => navigate(`/genre/${encodeURIComponent(genre.id)}`)}
             className="group relative h-40 rounded-2xl p-4 overflow-hidden cursor-pointer shadow-lg transition-transform duration-300 hover:scale-105 select-none"
             style={{ backgroundColor: genre.color }}
           >
