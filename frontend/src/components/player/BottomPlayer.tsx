@@ -99,8 +99,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
             e.stopPropagation();
             toggleLikeTrack(currentTrack);
           }}
-          className="text-spotify-subtext hover:text-white transition-colors p-1 flex-shrink-0"
+          className="text-spotify-subtext hover:text-white transition-colors p-1 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
           title={isLiked ? 'Remove from Your Library' : 'Save to Your Library'}
+          aria-label={isLiked ? `Remove ${currentTrack.title} from Your Library` : `Save ${currentTrack.title} to Your Library`}
+          aria-pressed={isLiked}
         >
           <Heart className={cn('w-4 h-4 md:w-5 md:h-5', isLiked && 'fill-spotify-green text-spotify-green')} />
         </button>
@@ -112,26 +114,30 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
           <button
             onClick={toggleShuffle}
             className={cn(
-              'hidden md:inline transition-colors',
+              'hidden md:inline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded p-1',
               shuffle ? 'text-spotify-green' : 'text-spotify-subtext hover:text-white'
             )}
             title="Enable shuffle"
+            aria-label={shuffle ? 'Disable shuffle' : 'Enable shuffle'}
+            aria-pressed={shuffle}
           >
             <Shuffle className="w-4 h-4" />
           </button>
 
           <button
             onClick={prevTrack}
-            className="text-spotify-subtext hover:text-white transition-colors p-1"
-            title="Previous"
+            className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
+            title="Previous track"
+            aria-label="Previous track"
           >
             <SkipBack className="w-4 h-4 md:w-5 md:h-5 fill-current" />
           </button>
 
           <button
             onClick={togglePlay}
-            className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white hover:scale-105 transition-transform flex items-center justify-center text-black shadow"
+            className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white hover:scale-105 active:scale-95 transition-transform flex items-center justify-center text-black shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             title={playbackState === 'playing' ? 'Pause' : 'Play'}
+            aria-label={playbackState === 'playing' ? 'Pause track' : 'Play track'}
           >
             {playbackState === 'playing' ? (
               <Pause className="w-4 h-4 md:w-5 md:h-5 fill-black" />
@@ -142,8 +148,9 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
 
           <button
             onClick={nextTrack}
-            className="text-spotify-subtext hover:text-white transition-colors p-1"
-            title="Next"
+            className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
+            title="Next track"
+            aria-label="Next track"
           >
             <SkipForward className="w-4 h-4 md:w-5 md:h-5 fill-current" />
           </button>
@@ -151,10 +158,11 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
           <button
             onClick={cycleRepeat}
             className={cn(
-              'hidden md:inline transition-colors relative',
+              'hidden md:inline transition-colors relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded p-1',
               repeat !== 'off' ? 'text-spotify-green' : 'text-spotify-subtext hover:text-white'
             )}
             title={`Repeat mode: ${repeat}`}
+            aria-label={`Cycle repeat mode (currently ${repeat})`}
           >
             <Repeat className="w-4 h-4" />
             {repeat === 'one' && (
@@ -197,8 +205,9 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
       <div className="hidden md:flex items-center justify-end w-1/4 gap-3">
         <button
           onClick={onOpenQueue}
-          className="text-spotify-subtext hover:text-white transition-colors p-1"
+          className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
           title="Current Queue"
+          aria-label="Open current play queue"
         >
           <ListMusic className="w-5 h-5" />
         </button>
@@ -206,10 +215,12 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
         <button
           onClick={toggleMiniPlayer}
           className={cn(
-            'transition-colors p-1',
+            'transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded',
             isMiniPlayerOpen ? 'text-spotify-green' : 'text-spotify-subtext hover:text-white'
           )}
           title="Toggle Video Player"
+          aria-label={isMiniPlayerOpen ? 'Collapse video player' : 'Expand video player'}
+          aria-expanded={isMiniPlayerOpen}
         >
           <Maximize2 className="w-4 h-4" />
         </button>
@@ -217,7 +228,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
         <div className="flex items-center gap-2">
           <button
             onClick={toggleMute}
-            className="text-spotify-subtext hover:text-white transition-colors"
+            className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
+            title={isMuted || volume === 0 ? 'Unmute volume' : 'Mute volume'}
+            aria-label={isMuted || volume === 0 ? 'Unmute volume' : 'Mute volume'}
+            aria-pressed={isMuted || volume === 0}
           >
             {isMuted || volume === 0 ? (
               <VolumeX className="w-5 h-5" />
@@ -229,9 +243,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
             type="range"
             min={0}
             max={100}
+            aria-label="Volume level"
             value={isMuted ? 0 : volume}
             onChange={handleVolumeChange}
-            className="w-20 h-1 bg-[#4d4d4d] rounded-lg appearance-none cursor-pointer accent-white hover:accent-spotify-green"
+            className="w-20 h-1 bg-[#4d4d4d] rounded-lg appearance-none cursor-pointer accent-white hover:accent-spotify-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green"
             style={{
               background: `linear-gradient(to right, #1db954 ${isMuted ? 0 : volume}%, #4d4d4d ${isMuted ? 0 : volume}%)`,
             }}
