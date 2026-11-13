@@ -18,3 +18,22 @@ export function formatViews(views?: number): string {
   if (views >= 1000) return `${(views / 1000).toFixed(1)}K views`;
   return `${views} views`;
 }
+
+/**
+ * Trigger subtle haptic feedback on supported mobile devices
+ */
+export function triggerHaptic(type: 'light' | 'medium' | 'success' = 'light') {
+  if (typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in navigator) {
+    try {
+      if (type === 'light') {
+        navigator.vibrate(10);
+      } else if (type === 'medium') {
+        navigator.vibrate(25);
+      } else if (type === 'success') {
+        navigator.vibrate([15, 50, 20]);
+      }
+    } catch {
+      // Non-critical, ignore
+    }
+  }
+}

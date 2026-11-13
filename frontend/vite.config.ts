@@ -48,6 +48,29 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
+        shortcuts: [
+          {
+            name: 'Search Music',
+            short_name: 'Search',
+            description: 'Find songs, artists, and playlists',
+            url: '/YouTune/#/search',
+            icons: [{ src: '/YouTune/pwa-192x192.png', sizes: '192x192' }],
+          },
+          {
+            name: 'Liked Songs',
+            short_name: 'Liked',
+            description: 'Your favorite tracks',
+            url: '/YouTune/#/library',
+            icons: [{ src: '/YouTune/pwa-192x192.png', sizes: '192x192' }],
+          },
+          {
+            name: 'Offline Vault',
+            short_name: 'Offline',
+            description: 'Downloaded music ready to play',
+            url: '/YouTune/#/library',
+            icons: [{ src: '/YouTune/pwa-192x192.png', sizes: '192x192' }],
+          },
+        ],
       },
       workbox: {
         runtimeCaching: [

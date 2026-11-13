@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopNavbar } from './TopNavbar';
 import { BottomPlayer } from '../player/BottomPlayer';
@@ -8,9 +8,11 @@ import { MobileNav } from './MobileNav';
 import { QueueDrawer } from '../player/QueueDrawer';
 import { NowPlayingModal } from '../player/NowPlayingModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
+import { PwaOverlay } from '../common/PwaOverlay';
 import { useLibraryStore } from '../../stores/useLibraryStore';
 
 export const MainLayout: React.FC = () => {
+  const navigate = useNavigate();
   const { createPlaylist } = useLibraryStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
@@ -29,6 +31,9 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[100dvh] w-screen bg-black text-white font-sans overflow-hidden select-none">
+      {/* PWA Install & Offline Status Overlay */}
+      <PwaOverlay onGoToOffline={() => navigate('/library')} />
+
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar (Desktop Only) */}
         <Sidebar onNewPlaylistClick={() => setIsModalOpen(true)} />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Play,
   Pause,
@@ -10,12 +10,11 @@ import {
   VolumeX,
   Heart,
   Maximize2,
-  ExternalLink,
   ListMusic,
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/usePlayerStore';
 import { useLibraryStore } from '../../stores/useLibraryStore';
-import { formatTime, cn } from '../../utils/formatters';
+import { formatTime, cn, triggerHaptic } from '../../utils/formatters';
 
 interface BottomPlayerProps {
   onOpenQueue?: () => void;
@@ -46,6 +45,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
 
   const { isTrackLiked, toggleLikeTrack } = useLibraryStore();
 
+  // Touch Swipe Gesture State (Idea 5)
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
   if (!currentTrack) {
     return (
       <footer className="h-16 md:h-20 bg-spotify-black border-t border-spotify-border px-4 flex items-center justify-between select-none pb-14 md:pb-0">
@@ -67,26 +70,72 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
     setVolume(val);
   };
 
+  // Idea 5: Mobile Swipe Gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const diffX = e.changedTouches[0].clientX - touchStartX.current;
+    const diffY = e.changedTouches[0].clientY - touchStartY.current;
+
+    // Swipe Up: Open Now Playing Modal
+    if (diffY < -50 && Math.abs(diffX) < 80) {
+      triggerHaptic('medium');
+      onOpenNowPlaying?.();
+    }
+    // Swipe Left: Next Track
+    else if (diffX < -60 && Math.abs(diffY) < 60) {
+      triggerHaptic('light');
+      nextTrack();
+    }
+    // Swipe Right: Previous Track
+    else if (diffX > 60 && Math.abs(diffY) < 60) {
+      triggerHaptic('light');
+      prevTrack();
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
   return (
-    <footer className="fixed md:relative bottom-14 md:bottom-0 left-0 right-0 h-16 md:h-20 bg-[#181818] border-t border-[#282828] px-3 md:px-4 flex items-center justify-between select-none z-50 shadow-2xl">
+    <footer
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="fixed md:relative bottom-14 md:bottom-0 left-0 right-0 h-16 md:h-20 bg-[#181818]/95 backdrop-blur-xl border-t border-[#282828] px-3 md:px-4 flex items-center justify-between select-none z-50 shadow-2xl relative overflow-hidden"
+    >
+      {/* Idea 3: Subtle Dynamic Ambient Background Glow from track art */}
+      <div
+        className="absolute inset-0 opacity-20 pointer-events-none blur-3xl transition-all duration-700 -z-10"
+        style={{
+          backgroundImage: `radial-gradient(circle at 15% 50%, #1db954, transparent 60%)`,
+        }}
+      />
+
       {/* Left: Track Information */}
       <div
-        onClick={onOpenNowPlaying}
+        onClick={() => {
+          triggerHaptic('light');
+          onOpenNowPlaying?.();
+        }}
         className="flex items-center gap-2.5 md:gap-3 flex-1 md:w-1/4 min-w-0 pr-2 cursor-pointer group"
       >
         <div className="relative flex-shrink-0">
           <img
             src={currentTrack.thumbnailUrl}
             alt={currentTrack.title}
-            className="w-10 h-10 md:w-14 md:h-14 rounded object-cover shadow"
+            className="w-10 h-10 md:w-14 md:h-14 rounded-lg object-cover shadow-lg transition-transform group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded">
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
             <Maximize2 className="w-3.5 h-3.5 text-white" />
           </div>
         </div>
 
         <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-white text-xs md:text-sm font-medium hover:underline truncate">
+          <span className="text-white text-xs md:text-sm font-semibold hover:underline truncate">
             {currentTrack.title}
           </span>
           <span className="text-spotify-subtext text-[10px] md:text-xs hover:underline truncate">
@@ -97,22 +146,26 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
         <button
           onClick={(e) => {
             e.stopPropagation();
+            triggerHaptic(isLiked ? 'light' : 'success');
             toggleLikeTrack(currentTrack);
           }}
-          className="text-spotify-subtext hover:text-white transition-colors p-1 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
+          className="text-spotify-subtext hover:text-white transition-colors p-1.5 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded-full active:scale-90"
           title={isLiked ? 'Remove from Your Library' : 'Save to Your Library'}
           aria-label={isLiked ? `Remove ${currentTrack.title} from Your Library` : `Save ${currentTrack.title} to Your Library`}
           aria-pressed={isLiked}
         >
-          <Heart className={cn('w-4 h-4 md:w-5 md:h-5', isLiked && 'fill-spotify-green text-spotify-green')} />
+          <Heart className={cn('w-4 h-4 md:w-5 md:h-5 transition-transform duration-200', isLiked && 'fill-spotify-green text-spotify-green scale-110')} />
         </button>
       </div>
 
-      {/* Center: Playback Controls (Compact on Mobile, Full on Desktop) */}
+      {/* Center: Playback Controls */}
       <div className="flex items-center md:flex-col justify-end md:justify-center md:w-2/4 md:max-w-xl gap-2 md:gap-0">
         <div className="flex items-center gap-2 md:gap-4">
           <button
-            onClick={toggleShuffle}
+            onClick={() => {
+              triggerHaptic('light');
+              toggleShuffle();
+            }}
             className={cn(
               'hidden md:inline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded p-1',
               shuffle ? 'text-spotify-green' : 'text-spotify-subtext hover:text-white'
@@ -125,8 +178,11 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
           </button>
 
           <button
-            onClick={prevTrack}
-            className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
+            onClick={() => {
+              triggerHaptic('light');
+              prevTrack();
+            }}
+            className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded active:scale-95"
             title="Previous track"
             aria-label="Previous track"
           >
@@ -134,8 +190,11 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
           </button>
 
           <button
-            onClick={togglePlay}
-            className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white hover:scale-105 active:scale-95 transition-transform flex items-center justify-center text-black shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            onClick={() => {
+              triggerHaptic('medium');
+              togglePlay();
+            }}
+            className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white hover:scale-105 active:scale-90 transition-transform flex items-center justify-center text-black shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             title={playbackState === 'playing' ? 'Pause' : 'Play'}
             aria-label={playbackState === 'playing' ? 'Pause track' : 'Play track'}
           >
@@ -147,8 +206,11 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
           </button>
 
           <button
-            onClick={nextTrack}
-            className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded"
+            onClick={() => {
+              triggerHaptic('light');
+              nextTrack();
+            }}
+            className="text-spotify-subtext hover:text-white transition-colors p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded active:scale-95"
             title="Next track"
             aria-label="Next track"
           >
@@ -156,7 +218,10 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
           </button>
 
           <button
-            onClick={cycleRepeat}
+            onClick={() => {
+              triggerHaptic('light');
+              cycleRepeat();
+            }}
             className={cn(
               'hidden md:inline transition-colors relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spotify-green rounded p-1',
               repeat !== 'off' ? 'text-spotify-green' : 'text-spotify-subtext hover:text-white'
@@ -171,9 +236,9 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
           </button>
         </div>
 
-        {/* Timeline Slider (Desktop full, Mobile absolute bottom line) */}
+        {/* Timeline Slider (Desktop full) */}
         <div className="hidden md:flex w-full items-center gap-2 mt-1">
-          <span className="text-[11px] text-spotify-subtext w-8 text-right">
+          <span className="text-[11px] text-spotify-subtext w-8 text-right font-mono">
             {formatTime(currentTime)}
           </span>
           <div className="relative flex-1 flex items-center group">
@@ -189,7 +254,7 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ onOpenQueue, onOpenN
               }}
             />
           </div>
-          <span className="text-[11px] text-spotify-subtext w-8">
+          <span className="text-[11px] text-spotify-subtext w-8 font-mono">
             {formatTime(duration)}
           </span>
         </div>
