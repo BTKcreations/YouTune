@@ -1,4 +1,5 @@
 import { Track } from '../types/music';
+import { ClientMusicService } from './clientMusicService';
 
 const CACHE_NAME = 'youtune-offline-audio-v1';
 const METADATA_KEY = 'youtune_offline_tracks_meta';
@@ -11,62 +12,37 @@ export interface OfflineTrackMetadata {
 
 export class OfflineStorageService {
   /**
-   * Convert image URL to base64 Data URL safely without cross-origin exceptions
-   */
-  private static async getSafeThumbnail(url: string): Promise<string> {
-    try {
-      const resp = await fetch(url, { mode: 'cors' });
-      if (resp.ok) {
-        const blob = await resp.blob();
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string || url);
-          reader.onerror = () => resolve(url);
-          reader.readAsDataURL(blob);
-        });
-      }
-    } catch {
-      // Fallback: If external domain blocks CORS, return standard YouTube thumbnail URL
-    }
-    return url;
-  }
-
-  /**
-   * Save track into local storage and cache for offline listening
+   * Save track into local storage and cache audio blob for true offline listening
    */
   static async downloadTrack(track: Track): Promise<boolean> {
     try {
-      // 1. Convert thumbnail to base64 data URL for offline image rendering if possible
-      let cachedTrack = { ...track };
-      try {
-        const base64Thumb = await this.getSafeThumbnail(track.thumbnailUrl);
-        cachedTrack.thumbnailUrl = base64Thumb;
-      } catch {
-        // Keep original thumbnail if conversion fails
-      }
-
-      // 2. Save metadata to offline library
+      // 1. Immediately cache metadata in localStorage so it appears in the Offline Library
       const tracks = this.getDownloadedTracks();
       const existingIdx = tracks.findIndex(
         (t) => t.track.id === track.id || t.track.youtubeId === track.youtubeId
       );
 
       if (existingIdx >= 0) {
-        tracks[existingIdx] = { track: cachedTrack, downloadedAt: Date.now() };
+        tracks[existingIdx] = { track, downloadedAt: Date.now() };
       } else {
-        tracks.unshift({ track: cachedTrack, downloadedAt: Date.now() });
+        tracks.unshift({ track, downloadedAt: Date.now() });
       }
       localStorage.setItem(METADATA_KEY, JSON.stringify(tracks));
 
-      // 3. Cache image in browser Cache API if supported
+      // 2. Cache actual audio stream binary into Cache API if supported
       if ('caches' in window) {
         try {
           const cache = await caches.open(CACHE_NAME);
-          const imgUrl = `/offline/img/${track.youtubeId}`;
-          const imgResp = await fetch(track.thumbnailUrl, { mode: 'no-cors' });
-          if (imgResp) await cache.put(imgUrl, imgResp);
+          const audioUrl = await ClientMusicService.getAudioStreamUrl(track.youtubeId);
+          if (audioUrl) {
+            // Fetch audio stream as blob or through standard cache entry
+            const audioResp = await fetch(audioUrl, { mode: 'cors' }).catch(() => null);
+            if (audioResp && audioResp.ok) {
+              await cache.put(`/offline/audio/${track.youtubeId}`, audioResp);
+            }
+          }
         } catch {
-          // Non-critical, ignore
+          // Audio binary caching best-effort (CORS dependent)
         }
       }
 

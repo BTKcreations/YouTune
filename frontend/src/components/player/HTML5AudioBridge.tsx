@@ -3,6 +3,7 @@ import { usePlayerStore } from '../../stores/usePlayerStore';
 import { useLibraryStore } from '../../stores/useLibraryStore';
 import { ClientMusicService } from '../../services/clientMusicService';
 import { PersonalDiscoveryEngine } from '../../services/discoveryEngine';
+import { OfflineStorageService } from '../../services/offlineStorageService';
 
 export const HTML5AudioBridge: React.FC = () => {
   const {
@@ -142,6 +143,16 @@ export const HTML5AudioBridge: React.FC = () => {
         updateMediaSession(currentTrack);
         addToHistory(currentTrack);
         PersonalDiscoveryEngine.logPlay(currentTrack);
+
+        // Check if offline cached audio exists first
+        const offlineAudioUrl = await OfflineStorageService.getOfflineAudioUrl(currentTrack.youtubeId);
+        if (offlineAudioUrl && audioRef.current && !isCancelled) {
+          audioRef.current.src = offlineAudioUrl;
+          audioRef.current.load();
+          await audioRef.current.play();
+          setPlaybackState('playing');
+          return;
+        }
 
         // Fetch high quality audio stream
         const streamUrl = await ClientMusicService.getAudioStreamUrl(currentTrack.youtubeId);
