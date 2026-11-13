@@ -163,7 +163,7 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
         {isVideoMode ? (
           <div className="w-full max-w-xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-neutral-700 bg-black relative">
             <iframe
-              src={`https://www.youtube-nocookie.com/embed/${currentTrack.youtubeId}?autoplay=1&playsinline=1&controls=1&modestbranding=1&rel=0&enablejsapi=1`}
+              src={`https://www.youtube-nocookie.com/embed/${currentTrack.youtubeId}?autoplay=1&start=${Math.floor(currentTime)}&playsinline=1&controls=1&modestbranding=1&rel=0&enablejsapi=1`}
               title={currentTrack.title}
               className="w-full h-full border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

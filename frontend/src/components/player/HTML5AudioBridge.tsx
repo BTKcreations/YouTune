@@ -16,6 +16,7 @@ export const HTML5AudioBridge: React.FC = () => {
     nextTrack,
     prevTrack,
     setSeekPlayerHandler,
+    isVideoMode,
   } = usePlayerStore();
 
   const { addToHistory } = useLibraryStore();
@@ -170,12 +171,20 @@ export const HTML5AudioBridge: React.FC = () => {
   // Sync play / pause
   useEffect(() => {
     if (!audioRef.current) return;
+    if (isVideoMode) {
+      // Pause HTML5 audio when Video Mode is active so audio does not duplicate
+      if (!audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+      return;
+    }
+
     if (playbackState === 'playing' && audioRef.current.paused) {
       audioRef.current.play().catch(e => console.warn('Play interrupted', e));
     } else if (playbackState === 'paused' && !audioRef.current.paused) {
       audioRef.current.pause();
     }
-  }, [playbackState]);
+  }, [playbackState, isVideoMode]);
 
   // Sync volume / mute
   useEffect(() => {
