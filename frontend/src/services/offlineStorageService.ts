@@ -11,18 +11,54 @@ export interface OfflineTrackMetadata {
 
 export class OfflineStorageService {
   /**
+   * Convert image URL to base64 Data URL safely without cross-origin exceptions
+   */
+  private static async getSafeThumbnail(url: string): Promise<string> {
+    try {
+      const resp = await fetch(url, { mode: 'cors' });
+      if (resp.ok) {
+        const blob = await resp.blob();
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string || url);
+          reader.onerror = () => resolve(url);
+          reader.readAsDataURL(blob);
+        });
+      }
+    } catch {
+      // Fallback: If external domain blocks CORS, return standard YouTube thumbnail URL
+    }
+    return url;
+  }
+
+  /**
    * Save track into local storage and cache for offline listening
    */
   static async downloadTrack(track: Track): Promise<boolean> {
     try {
-      // 1. Immediately save metadata to offline library
-      const tracks = this.getDownloadedTracks();
-      if (!tracks.some((t) => t.track.id === track.id || t.track.youtubeId === track.youtubeId)) {
-        tracks.unshift({ track, downloadedAt: Date.now() });
-        localStorage.setItem(METADATA_KEY, JSON.stringify(tracks));
+      // 1. Convert thumbnail to base64 data URL for offline image rendering if possible
+      let cachedTrack = { ...track };
+      try {
+        const base64Thumb = await this.getSafeThumbnail(track.thumbnailUrl);
+        cachedTrack.thumbnailUrl = base64Thumb;
+      } catch {
+        // Keep original thumbnail if conversion fails
       }
 
-      // 2. Optionally cache image if browser supports Cache API (non-blocking)
+      // 2. Save metadata to offline library
+      const tracks = this.getDownloadedTracks();
+      const existingIdx = tracks.findIndex(
+        (t) => t.track.id === track.id || t.track.youtubeId === track.youtubeId
+      );
+
+      if (existingIdx >= 0) {
+        tracks[existingIdx] = { track: cachedTrack, downloadedAt: Date.now() };
+      } else {
+        tracks.unshift({ track: cachedTrack, downloadedAt: Date.now() });
+      }
+      localStorage.setItem(METADATA_KEY, JSON.stringify(tracks));
+
+      // 3. Cache image in browser Cache API if supported
       if ('caches' in window) {
         try {
           const cache = await caches.open(CACHE_NAME);
