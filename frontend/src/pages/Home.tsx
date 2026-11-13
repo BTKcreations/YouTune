@@ -104,25 +104,32 @@ export const Home: React.FC = () => {
       )}
 
       {/* Adaptive Personalized Discovery Row */}
-      {adaptiveSections.map((sec, idx) => (
-        <div key={idx} className="space-y-4">
-          <div>
-            <h2 className="text-xl font-bold text-white">{sec.title}</h2>
-            <p className="text-xs text-spotify-subtext mt-0.5">{sec.subtitle}</p>
+      {adaptiveSections.map((sec, idx) => {
+        const secTracks = trendingTracks.slice(idx * 6, (idx + 1) * 6);
+        if (secTracks.length === 0) return null;
+        return (
+          <div key={idx} className="space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <span>{sec.title}</span>
+                <Sparkles className="w-4 h-4 text-spotify-green" />
+              </h2>
+              <p className="text-xs text-spotify-subtext mt-0.5">{sec.subtitle}</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {secTracks.map((track) => (
+                <MusicCard
+                  key={track.id}
+                  title={track.title}
+                  subtitle={track.artist}
+                  imageUrl={track.thumbnailUrl}
+                  onPlay={() => playTrack(track, secTracks)}
+                />
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {trendingTracks.slice(idx * 6, (idx + 1) * 6).map((track) => (
-              <MusicCard
-                key={track.id}
-                title={track.title}
-                subtitle={track.artist}
-                imageUrl={track.thumbnailUrl}
-                onPlay={() => playTrack(track, trendingTracks)}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Popular Music Right Now Tracklist */}
       {heroTracks.length > 0 && (

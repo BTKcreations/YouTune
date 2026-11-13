@@ -104,7 +104,14 @@ export const NowPlayingModal: React.FC<NowPlayingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-b from-[#242424] via-[#121212] to-black flex flex-col p-6 animate-in slide-in-from-bottom duration-300 select-none overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-gradient-to-b from-[#242424] via-[#121212] to-black flex flex-col p-6 animate-in slide-in-from-bottom duration-300 select-none overflow-y-auto relative">
+      {/* Ambient Radial Lighting Behind Album Artwork */}
+      <div
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full blur-[120px] pointer-events-none opacity-25 transition-all duration-700"
+        style={{
+          background: 'radial-gradient(circle, #1db954 0%, transparent 70%)',
+        }}
+      />
       {/* Top Bar */}
       <div className="flex items-center justify-between pt-2 pb-6">
         <button
